@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=20';
-import { buildDays, labelFor } from './score.js?v=20';
-import { sunPosition, compass } from './sun.js?v=20';
-import { SkyRenderer } from './sky.js?v=20';
-import { GLSky } from './sky-gl.js?v=20';
+import { fetchForecast, searchPlaces } from './api.js?v=21';
+import { buildDays, labelFor } from './score.js?v=21';
+import { sunPosition, compass } from './sun.js?v=21';
+import { SkyRenderer } from './sky.js?v=21';
+import { GLSky } from './sky-gl.js?v=21';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -143,10 +143,18 @@ function renderSummary() {
     $('#v-label').textContent = 'No forecast';
     $('#v-line').textContent = 'The sun does not rise or set here on this day, or the forecast does not reach it yet.';
     $('#why').textContent = ''; $('#v-conf').textContent = '';
+    $('#badge').hidden = true;
     return;
   }
   v.dataset.tone = ev.tone;
   $('#v-label').textContent = ev.label;
+  const badge = $('#badge');
+  badge.hidden = false;
+  badge.dataset.tone = ev.tone;
+  badge.innerHTML = '';
+  for (const [cls, text] of [['b-when', whenText(i, kind, day)], ['b-label', ev.label], ['b-time', fmtTime(ev.t, day.offset)]]) {
+    const span = document.createElement('span'); span.className = cls; span.textContent = text; badge.append(span);
+  }
   $('#v-line').textContent = ev.headline;
   $('#why').textContent = ev.factors.slice(0, 3).map((f) => f.text).join(' ');
   $('#v-conf').textContent = `${ev.confidence.level} confidence. ${ev.confidence.note}`;
