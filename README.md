@@ -1,4 +1,4 @@
-# Afterglow
+# Glowcast
 
 A sunrise and sunset forecast. Pick a place and it shows sunrise and sunset times, golden and blue hour, and a 0 to 100 score for how colorful the sky is likely to be, with a drawn preview of the likely look. It covers the next 7 days.
 

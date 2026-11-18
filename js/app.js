@@ -36,8 +36,8 @@ function fmtDay(ms, off, i) {
 const pct = (x) => `${Math.round(x * 100)}%`;
 
 // ---------- storage ----------
-function savePlace(p) { try { localStorage.setItem('afterglow.place', JSON.stringify(p)); } catch {} }
-function loadPlace() { try { return JSON.parse(localStorage.getItem('afterglow.place')); } catch { return null; } }
+function savePlace(p) { try { localStorage.setItem('glowcast.place', JSON.stringify(p)); } catch {} }
+function loadPlace() { try { return JSON.parse(localStorage.getItem('glowcast.place')); } catch { return null; } }
 
 // ---------- data ----------
 async function load(place) {
