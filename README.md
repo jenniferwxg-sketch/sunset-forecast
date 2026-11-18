@@ -7,7 +7,7 @@ A sunrise and sunset forecast. Pick a place and it shows sunrise and sunset time
 Sunset color comes from sunlight lighting clouds from below after a long, low path through the air. For the exact minute of each sunrise and sunset, the site reads the hourly forecast and checks:
 
 - **Canvas:** high and mid cloud overhead. About 30 to 70% cover scores best.
-- **Light path:** low cloud 100 and 250 km toward the sun, which can block the light. The site requests forecasts at those points along the sun's azimuth.
+- **Light path:** low cloud 60, 150 and 300 km toward the sun, which can block the light. The site requests forecasts at those points along the sun's azimuth.
 - **Air:** humidity, visibility and aerosol optical depth. Haze washes colors out; a little aerosol deepens reds.
 - **Rain:** rain at the time lowers the score; rain clearing just before raises it.
 
@@ -30,3 +30,11 @@ Then open http://localhost:8000.
 ## Deploy
 
 GitHub Pages: Settings → Pages → Deploy from a branch → `main`, folder `/ (root)`.
+
+## Weather models
+
+Each forecast is scored with four models from Open-Meteo: ECMWF IFS (Europe), GFS (United States), ICON (Germany) and GEM (Canada, using the 2.5 km HRDPS over North America). The site shows the median score and lowers confidence when the models disagree. If the multi-model request fails, it falls back to Open-Meteo's default model.
+
+## Accuracy
+
+Sun times are accurate to about 2 minutes. The color score is roughly right 2 times out of 3 for the next day and about 4 in 10 at 4+ days. The sky picture is an illustration of the forecast, not a photo.

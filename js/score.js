@@ -53,8 +53,8 @@ export const LABELS = [
 ];
 export const labelFor = (s) => LABELS.find((l) => s >= l.min);
 
-export function conditionsAt(data, tMs, kind) {
-  const [local, ...rest] = data.weather;
+export function conditionsAt(weather, air, tMs, kind) {
+  const [local, ...rest] = weather;
   const half = rest.length / 2;
   const path = kind === 'sunrise' ? rest.slice(0, half) : rest.slice(half);
   const t = tMs / 1000;
@@ -71,8 +71,8 @@ export function conditionsAt(data, tMs, kind) {
     temp: sample(local, 'temperature_2m', t),
     pathLow: path.map((p) => pct(p, 'cloud_cover_low')),
     pathMid: path.map((p) => pct(p, 'cloud_cover_mid')),
-    aod: sample(data.air, 'aerosol_optical_depth', t),
-    dust: sample(data.air, 'dust', t),
+    aod: sample(air, 'aerosol_optical_depth', t),
+    dust: sample(air, 'dust', t),
   };
 }
 
@@ -82,8 +82,11 @@ export function scoreSky(c) {
   const canvasQ = curve(canvas, [[0, 0], [0.1, 0.12], [0.2, 0.4], [0.35, 0.85], [0.45, 1], [0.7, 1], [0.9, 0.82], [1, 0.68]]);
 
   // 2. Light path toward the sun.
-  const pathLow = 0.6 * (c.pathLow[0] ?? 0) + 0.4 * (c.pathLow[1] ?? 0);
-  const pathMid = Math.max(c.pathMid[0] ?? 0, c.pathMid[1] ?? 0);
+  // Nearer low cloud blocks more of the sky's light than distant low cloud.
+  const W = [0.4, 0.35, 0.25];
+  const wSum = W.slice(0, c.pathLow.length).reduce((a, b) => a + b, 0) || 1;
+  const pathLow = c.pathLow.reduce((a, v, i) => a + v * (W[i] ?? 0), 0) / wSum;
+  const pathMid = Math.max(0, ...c.pathMid);
   const transmit = clamp((1 - 0.95 * Math.pow(pathLow, 1.1)) * (1 - 0.35 * Math.pow(pathMid, 2.5)));
 
   // 3. Local low cloud: scattered low cloud can glow, overcast hides the sky.
@@ -126,8 +129,8 @@ export function explain(c, r, kind, az) {
   else f.push({ fx: 'neutral', text: `Thin high and mid cloud (${p(P.canvas)}). Some color is possible.` });
   // Path
   if (P.canvas >= 0.1) {
-    if (P.pathLow > 0.55) f.push({ fx: 'minus', text: `Low cloud ${p(P.pathLow)} along the light path ${PATH_KM[0]}-${PATH_KM[1]} km ${dir}. It may block the sun's light before it reaches your clouds.` });
-    else if (P.pathLow < 0.2) f.push({ fx: 'plus', text: `Clear light path toward the sun (${dir}): ${P.pathLow < 0.03 ? 'no' : 'only ' + p(P.pathLow)} low cloud out to ${PATH_KM[1]} km.` });
+    if (P.pathLow > 0.55) f.push({ fx: 'minus', text: `Low cloud ${p(P.pathLow)} along the light path ${PATH_KM[0]}-${PATH_KM.at(-1)} km ${dir}. It may block the sun's light before it reaches your clouds.` });
+    else if (P.pathLow < 0.2) f.push({ fx: 'plus', text: `Clear light path toward the sun (${dir}): ${P.pathLow < 0.03 ? 'no' : 'only ' + p(P.pathLow)} low cloud out to ${PATH_KM.at(-1)} km.` });
     else f.push({ fx: 'neutral', text: `Some low cloud toward the sun (${p(P.pathLow)}, ${dir}). Light may get through in gaps.` });
   }
   // Local low
@@ -159,20 +162,26 @@ export function headline(c, r, kind) {
   return `Muted colors are most likely.`;
 }
 
-function confidence(tMs) {
+function confidence(tMs, spread, n) {
   const h = (tMs - Date.now()) / 3600000;
-  if (h < 30) return { level: 'High', note: 'Forecast within about a day.' };
-  if (h < 78) return { level: 'Medium', note: 'Cloud forecasts shift a lot 2 to 3 days out.' };
-  return { level: 'Low', note: 'Cloud forecasts this far out are a rough guide.' };
+  let lvl = h < 30 ? 2 : h < 78 ? 1 : 0;
+  if (n > 1 && spread > 30) lvl = Math.min(lvl, 0);
+  else if (n > 1 && spread > 15) lvl = Math.max(0, lvl - 1);
+  const level = ['Low', 'Medium', 'High'][lvl];
+  const lead = h < 30 ? 'Forecast within about a day.' : h < 78 ? 'Cloud forecasts shift a lot 2 to 3 days out.' : 'Cloud forecasts this far out are a rough guide.';
+  const agree = n < 2 ? '' : spread <= 15 ? ` The ${n} weather models agree.` : spread <= 30 ? ` The ${n} weather models partly disagree.` : ` The ${n} weather models disagree a lot.`;
+  return { level, note: lead + agree };
 }
 
 // Build the list of days with sunrise/sunset forecasts.
+// Each event is scored once per weather model; the median model is shown.
 export function buildDays(data, lat, lon) {
-  const off = data.weather[0].utc_offset_seconds * 1000;
+  const ref = data.views[0].weather[0];
+  const off = ref.utc_offset_seconds * 1000;
   const now = Date.now();
   const firstLocalMidnight = Math.floor((now + off) / 86400000) * 86400000 - off;
   const days = [];
-  const lastT = data.weather[0].hourly.time.at(-1) * 1000;
+  const lastT = ref.hourly.time.at(-1) * 1000;
   for (let i = 0; i < 7; i++) {
     const start = firstLocalMidnight + i * 86400000;
     const ev = dayEvents(start, lat, lon);
@@ -181,14 +190,20 @@ export function buildDays(data, lat, lon) {
       const t = ev[kind];
       if (!t || t > lastT) { day[kind] = null; continue; }
       const az = kind === 'sunrise' ? ev.sunriseAz : ev.sunsetAz;
-      const c = conditionsAt(data, t, kind);
-      const r = scoreSky(c);
+      const runs = data.views.map((v) => {
+        const c = conditionsAt(v.weather, data.air, t, kind);
+        return { model: v, cond: c, ...scoreSky(c) };
+      }).filter((r) => Number.isFinite(r.score)).sort((a, b) => a.score - b.score);
+      const mid = runs[Math.floor((runs.length - 1) / 2)];
+      const spread = runs.at(-1).score - runs[0].score;
       day[kind] = {
-        kind, t, az, cond: c, ...r,
+        kind, t, az, cond: mid.cond, score: mid.score, label: mid.label, tone: mid.tone, parts: mid.parts,
+        models: runs.map((r) => ({ label: r.model.label, from: r.model.from, score: r.score, tone: r.tone, median: r === mid })),
+        spread,
         past: t < now - 20 * 60000,
-        headline: headline(c, r, kind),
-        factors: explain(c, r, kind, az),
-        confidence: confidence(t),
+        headline: headline(mid.cond, mid, kind),
+        factors: explain(mid.cond, mid, kind, az),
+        confidence: confidence(t, spread, runs.length),
       };
     }
     days.push(day);

@@ -171,6 +171,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .t-fire { --c: var(--t-fire); } .t-vivid { --c: var(--t-vivid); } .t-good { --c: var(--t-good); }
 .t-fair { --c: var(--t-fair); } .t-poor { --c: var(--t-poor); }
 
+.sub { margin: 20px 0 10px; font: 600 12px/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+.small { font-size: 13px; margin: 10px 0 0; }
+.models { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.model { --c: var(--t-good); display: grid; grid-template-columns: 1fr auto; gap: 0 8px; align-items: center; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--line); background: #fff; }
+.model .mn { font-weight: 700; font-size: 13px; }
+.model .mf { grid-row: 2; font-size: 12px; color: var(--muted); }
+.model b { grid-row: 1 / span 2; grid-column: 2; font: 600 22px var(--display); color: var(--c); font-variant-numeric: tabular-nums; }
+.model.mid { border-color: var(--c); box-shadow: 0 4px 14px rgb(214 170 80 / 0.2); }
+.accuracy { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--plus-bg); border: 1px solid var(--line); font-size: 14px; color: var(--ink); max-width: none; }
 .how p, .how ol { max-width: 68ch; }
 .how ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .foot { padding-block: 10px 40px; color: var(--muted); font-size: 13px; }

@@ -1,7 +1,7 @@
-import { fetchForecast, searchPlaces } from './api.js?v=5';
-import { buildDays, labelFor } from './score.js?v=5';
-import { sunPosition, compass } from './sun.js?v=5';
-import { SkyRenderer } from './sky.js?v=5';
+import { fetchForecast, searchPlaces } from './api.js?v=6';
+import { buildDays, labelFor } from './score.js?v=6';
+import { sunPosition, compass } from './sun.js?v=6';
+import { SkyRenderer } from './sky.js?v=6';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -166,6 +166,9 @@ function renderWhy() {
   $('#why').innerHTML = ev
     ? ev.factors.map((f) => `<li class="fx-${f.fx}"><span class="fx-mark" aria-hidden="true">${f.fx === 'plus' ? '+' : f.fx === 'minus' ? '−' : '•'}</span><span>${f.text}</span></li>`).join('')
     : '';
+  $('#models').innerHTML = ev && ev.models
+    ? ev.models.map((m) => `<div class="model t-${m.tone}${m.median ? ' mid' : ''}"><span class="mn">${m.label}</span><span class="mf">${m.from}</span><b>${m.score}</b></div>`).join('')
+    : '';
 }
 
 function meter(label, value, display, hint) {
@@ -181,7 +184,7 @@ function renderConditions() {
     meter('High cloud', c.high, pct(c.high), 'Above 6 km. Catches color longest.'),
     meter('Mid cloud', c.mid, pct(c.mid), '2 to 6 km.'),
     meter('Low cloud overhead', c.low, pct(c.low), 'Below 2 km. Too much hides the sky.'),
-    meter(`Low cloud toward the sun`, P.pathLow, pct(P.pathLow), `100 to 250 km ${dir}. Blocks the light.`),
+    meter(`Low cloud toward the sun`, P.pathLow, pct(P.pathLow), `60 to 300 km ${dir}. Blocks the light.`),
     meter('Humidity', c.rh == null ? null : c.rh / 100, c.rh == null ? '—' : `${Math.round(c.rh)}%`),
     meter('Visibility', c.vis == null ? null : Math.min(1, c.vis / 30000), c.vis == null ? '—' : `${(c.vis / 1000).toFixed(0)} km`),
     meter('Aerosol optical depth', c.aod == null ? null : Math.min(1, c.aod / 0.8), c.aod == null ? 'n/a' : c.aod.toFixed(2), c.aod == null ? 'Only forecast 5 days out.' : 'Smoke, dust, pollution.'),
