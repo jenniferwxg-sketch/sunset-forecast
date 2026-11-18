@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=18';
-import { buildDays, labelFor } from './score.js?v=18';
-import { sunPosition, compass } from './sun.js?v=18';
-import { SkyRenderer } from './sky.js?v=18';
-import { GLSky } from './sky-gl.js?v=18';
+import { fetchForecast, searchPlaces } from './api.js?v=19';
+import { buildDays, labelFor } from './score.js?v=19';
+import { sunPosition, compass } from './sun.js?v=19';
+import { SkyRenderer } from './sky.js?v=19';
+import { GLSky } from './sky-gl.js?v=19';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -50,6 +50,8 @@ async function load(place) {
   state.place = place;
   $('#search').hidden = true;
   $('#place-name').textContent = place.name;
+  $('#place-region').textContent = place.region || '';
+  $('#place-region').hidden = !place.region;
   setStatus('Loading the forecast…');
   try {
     const data = window.SNAPSHOT ? snapshotFor(place) : await fetchForecast(place.lat, place.lon);
