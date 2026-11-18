@@ -180,6 +180,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .model b { grid-row: 1 / span 2; grid-column: 2; font: 600 22px var(--display); color: var(--c); font-variant-numeric: tabular-nums; }
 .model.mid { border-color: var(--c); box-shadow: 0 4px 14px rgb(214 170 80 / 0.2); }
 .accuracy { margin: 0; padding: 12px 16px; border-radius: 16px; background: var(--plus-bg); border: 1px solid var(--line); font-size: 14px; color: var(--ink); max-width: none; }
+.spots-dir { margin: 0 0 12px; }
+.spots { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.spots li { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.spots span { color: var(--muted); font-size: 14px; }
+.spots a { font-size: 12px; }
 .how p, .how ol { max-width: 68ch; }
 .how ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .foot { padding-block: 10px 40px; color: var(--muted); font-size: 13px; }

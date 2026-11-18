@@ -1,7 +1,7 @@
-import { fetchForecast, searchPlaces } from './api.js?v=6';
-import { buildDays, labelFor } from './score.js?v=6';
-import { sunPosition, compass } from './sun.js?v=6';
-import { SkyRenderer } from './sky.js?v=6';
+import { fetchForecast, searchPlaces } from './api.js?v=7';
+import { buildDays, labelFor } from './score.js?v=7';
+import { sunPosition, compass } from './sun.js?v=7';
+import { SkyRenderer } from './sky.js?v=7';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -98,6 +98,7 @@ function renderAll() {
   renderHero();
   renderTimes();
   renderWhy();
+  renderSpots();
   renderConditions();
   renderWeek();
 }
@@ -145,20 +146,48 @@ function renderTimes() {
   const e = day.events, o = day.offset;
   const rows = kind === 'sunrise'
     ? [
+        ['Civil twilight starts', fmtTime(e.civilDawn, o)],
         ['Blue hour', `${fmtTime(e.civilDawn, o)} – ${fmtTime(e.blueDawnEnd, o)}`],
         ['Sunrise', fmtTime(e.sunrise, o)],
+        ['Sun rises toward', e.sunriseAz ? `${Math.round(e.sunriseAz)}° ${compass(e.sunriseAz)}` : '—'],
         ['Golden hour', `${fmtTime(e.sunrise, o)} – ${fmtTime(e.goldenMorningEnd, o)}`],
-        ['Best color', e.sunrise ? `${fmtTime(e.sunrise - 25 * 60000, o)} – ${fmtTime(e.sunrise + 5 * 60000, o)}` : '—'],
         ['Sunset', fmtTime(e.sunset, o)],
       ]
     : [
         ['Golden hour', `${fmtTime(e.goldenEveningStart, o)} – ${fmtTime(e.sunset, o)}`],
         ['Sunset', fmtTime(e.sunset, o)],
-        ['Best color', e.sunset ? `${fmtTime(e.sunset - 5 * 60000, o)} – ${fmtTime(e.sunset + 25 * 60000, o)}` : '—'],
+        ['Sun sets toward', e.sunsetAz ? `${Math.round(e.sunsetAz)}° ${compass(e.sunsetAz)}` : '—'],
         ['Blue hour', `${fmtTime(e.blueDuskStart, o)} – ${fmtTime(e.civilDusk, o)}`],
+        ['Civil twilight ends', fmtTime(e.civilDusk, o)],
         ['Sunrise', fmtTime(e.sunrise, o)],
       ];
   $('#times').innerHTML = rows.map(([k, v]) => `<div class="trow"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+
+// Montreal viewpoints, each with the source that states its view direction.
+const MTL = { lat: 45.5019, lon: -73.5674 };
+const SPOTS = {
+  sunset: [
+    { name: 'Olmsted Trail "Sunset lookout", Mount Royal', note: 'Tourisme Montréal recommends this spot because it faces west. It is marked "Sunset lookout" on Google Maps.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+    { name: 'Parc René-Lévesque, Lachine', note: 'A peninsula at the western end of the Lachine Canal, with views across Lac Saint-Louis from the benches at its tip.', src: 'https://www.mtlblog.com/montreal/9-spots-to-catch-sunset-views-in-near-montreal/parc-rene-levesque-parc-st-louis-in-lachine', srcName: 'MTL Blog (2020)' },
+    { name: 'Parc Jean-Drapeau, Trois Disques sculpture', note: 'Listed by Tourisme Montréal as a sunset spot, looking across the St. Lawrence to the downtown skyline.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+  ],
+  sunrise: [
+    { name: 'Camillien-Houde Lookout, Mount Royal', note: 'The City of Montréal describes its view of the east side of Montreal, toward the Olympic Stadium tower. Open 6 AM to 11 PM.', src: 'https://montreal.ca/en/places/camillien-houde-lookout', srcName: 'Ville de Montréal' },
+    { name: 'Kondiaronk Belvedere, Mount Royal', note: 'Tourisme Montréal notes that this lookout faces east.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+  ],
+};
+function nearMontreal(p) {
+  const dLat = (p.lat - MTL.lat) * 111, dLon = (p.lon - MTL.lon) * 111 * Math.cos(MTL.lat * Math.PI / 180);
+  return Math.hypot(dLat, dLon) < 40;
+}
+function renderSpots() {
+  const panel = $('#spots-panel');
+  const { ev, kind } = current();
+  panel.hidden = !nearMontreal(state.place) || !ev;
+  if (panel.hidden) return;
+  $('#spots-dir').innerHTML = `The sun ${kind === 'sunset' ? 'sets' : 'rises'} at <b>${Math.round(ev.az)}° (${compass(ev.az)})</b> on this day. Pick a spot with an open view that way.`;
+  $('#spots').innerHTML = SPOTS[kind].map((x) => `<li><b>${x.name}</b><span>${x.note}</span><a href="${x.src}" target="_blank" rel="noopener">Source: ${x.srcName}</a></li>`).join('');
 }
 
 function renderWhy() {

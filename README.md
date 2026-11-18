@@ -35,6 +35,10 @@ GitHub Pages: Settings → Pages → Deploy from a branch → `main`, folder `/ 
 
 Each forecast is scored with four models from Open-Meteo: ECMWF IFS (Europe), GFS (United States), ICON (Germany) and GEM (Canada, using the 2.5 km HRDPS over North America). The site shows the median score and lowers confidence when the models disagree. If the multi-model request fails, it falls back to Open-Meteo's default model.
 
-## Accuracy
+## What is measured and what is estimated
 
-Sun times are accurate to about 2 minutes. The color score is roughly right 2 times out of 3 for the next day and about 4 in 10 at 4+ days. The sky picture is an illustration of the forecast, not a photo.
+- Measured or calculated from published formulas: sun times and directions (NOAA), and all weather inputs (cloud layers, humidity, visibility, rain, aerosol optical depth) from the models.
+- Estimated: the 0 to 100 color score. Its factors are known causes of colorful skies, but the weights are this project's own choices and have not been validated against observed sunsets. The confidence label is a fixed rule based on lead time and model spread.
+- Illustration: the sky picture.
+
+Montreal viewpoints shown on the site are limited to ones whose view direction is stated by a cited source.
