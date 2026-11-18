@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=21';
-import { buildDays, labelFor } from './score.js?v=21';
-import { sunPosition, compass } from './sun.js?v=21';
-import { SkyRenderer } from './sky.js?v=21';
-import { GLSky } from './sky-gl.js?v=21';
+import { fetchForecast, searchPlaces } from './api.js?v=22';
+import { buildDays, labelFor } from './score.js?v=22';
+import { sunPosition, compass } from './sun.js?v=22';
+import { SkyRenderer } from './sky.js?v=22';
+import { GLSky } from './sky-gl.js?v=22';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -152,7 +152,7 @@ function renderSummary() {
   badge.hidden = false;
   badge.dataset.tone = ev.tone;
   badge.innerHTML = '';
-  for (const [cls, text] of [['b-when', whenText(i, kind, day)], ['b-label', ev.label], ['b-time', fmtTime(ev.t, day.offset)]]) {
+  for (const [cls, text] of [['b-when', `${whenText(i, kind, day)} at ${fmtTime(ev.t, day.offset)}`], ['b-label', ev.label]]) {
     const span = document.createElement('span'); span.className = cls; span.textContent = text; badge.append(span);
   }
   $('#v-line').textContent = ev.headline;
@@ -229,7 +229,7 @@ function slot(ev, kind, i, off) {
   const name = kind === 'sunrise' ? 'Rise' : 'Set';
   if (!ev) return `<button class="slot none" disabled aria-label="${kind}: no forecast"><i></i><span>${name}</span></button>`;
   return `<button class="slot t-${ev.tone}${sel ? ' sel' : ''}${ev.past ? ' past' : ''}" data-i="${i}" data-k="${kind}" aria-pressed="${sel}"
-    aria-label="${kind} ${fmtTime(ev.t, off)}: ${ev.label}" title="${kind === 'sunrise' ? 'Sunrise' : 'Sunset'} ${fmtTime(ev.t, off)} · ${ev.label}"><i></i><span>${name}</span></button>`;
+    aria-label="${kind} ${fmtTime(ev.t, off)}: ${ev.label}" title="${kind === 'sunrise' ? 'Sunrise' : 'Sunset'} ${fmtTime(ev.t, off)}: ${ev.label}"><i></i><span>${name}</span></button>`;
 }
 
 function renderWeek() {
