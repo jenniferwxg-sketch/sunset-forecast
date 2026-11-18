@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=26';
-import { buildDays, labelFor } from './score.js?v=26';
-import { sunPosition, compass } from './sun.js?v=26';
-import { SkyRenderer } from './sky.js?v=26';
-import { GLSky } from './sky-gl.js?v=26';
+import { fetchForecast, searchPlaces } from './api.js?v=27';
+import { buildDays, labelFor } from './score.js?v=27';
+import { sunPosition, compass } from './sun.js?v=27';
+import { SkyRenderer } from './sky.js?v=27';
+import { GLSky } from './sky-gl.js?v=27';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -164,21 +164,23 @@ function renderSummary() {
 function renderFacts() {
   const { day, kind } = current();
   const e = day.events, o = day.offset;
-  const range = (a, b) => (a && b ? `${fmtTime(a, o)} – ${fmtTime(b, o)}` : '—');
-  const rows = kind === 'sunrise'
-    ? [
-        ['Sunrise', fmtTime(e.sunrise, o)],
-        ['Look toward', e.sunriseAz ? cap(dirWords(e.sunriseAz)) : '—', e.sunriseAz ? `${Math.round(e.sunriseAz)}°` : ''],
-        ['Blue hour', range(e.civilDawn, e.blueDawnEnd)],
-        ['Golden hour', range(e.sunrise, e.goldenMorningEnd)],
-      ]
-    : [
-        ['Sunset', fmtTime(e.sunset, o)],
-        ['Look toward', e.sunsetAz ? cap(dirWords(e.sunsetAz)) : '—', e.sunsetAz ? `${Math.round(e.sunsetAz)}°` : ''],
-        ['Golden hour', range(e.goldenEveningStart, e.sunset)],
-        ['Blue hour', range(e.blueDuskStart, e.civilDusk)],
-      ];
-  $('#facts').innerHTML = rows.map(([k, v, x]) => `<div><dt>${k}</dt><dd>${v}${x ? ` <small>${x}</small>` : ''}</dd></div>`).join('');
+  const range = (a, b) => (a && b ? `${fmtTime(a, o)} to ${fmtTime(b, o)}` : 'Not today');
+  const rise = kind === 'sunrise';
+  const t = rise ? e.sunrise : e.sunset;
+  const az = rise ? e.sunriseAz : e.sunsetAz;
+  const word = rise ? 'Sunrise' : 'Sunset';
+  const where = az ? `Look ${dirWords(az)}, about ${Math.round(az)}° on a compass.` : '';
+  const pairs = rise
+    ? [['Blue hour', range(e.civilDawn, e.blueDawnEnd)], ['Golden hour', range(e.sunrise, e.goldenMorningEnd)]]
+    : [['Golden hour', range(e.goldenEveningStart, e.sunset)], ['Blue hour', range(e.blueDuskStart, e.civilDusk)]];
+  const f = $('#facts');
+  f.innerHTML = '';
+  const add = (tag, cls, text, parent = f) => { const n = document.createElement(tag); n.className = cls; n.textContent = text; parent.append(n); return n; };
+  add('p', 'f-label', word);
+  add('p', 'f-time', t ? fmtTime(t, o) : 'None today');
+  if (where) add('p', 'f-where', where);
+  const row = add('div', 'f-pairs', '');
+  for (const [k, v] of pairs) { const d = add('div', 'f-pair', '', row); add('span', 'f-k', k, d); add('span', 'f-v', v, d); }
 }
 
 // Montreal viewpoints, each with the source that states its view direction.
