@@ -91,7 +91,7 @@ export class SkyRenderer {
   // Prepare cloud density fields for a given forecast (expensive; done once per event).
   prepare(cond, seed) {
     const W = 480, H = Math.round(W * this.aspect());
-    const horizon = Math.round(H * 0.8);
+    const horizon = Math.round(H * 0.87);
     const lowOver = smooth(0.55, 0.95, cond.low);
     const fields = {};
     for (const [name, L] of Object.entries(LAYERS)) {
@@ -105,13 +105,13 @@ export class SkyRenderer {
         for (let x = 0; x < W; x++) {
           const u = ((x / W) - 0.5) * depth * L.sx * (name === 'high' ? 0.35 : 1);
           const v = depth * L.sy * 0.18 + (name === 'high' ? u * 0.25 : 0);
-          raw[y * W + x] = noise(u + 13.1, v, L.oct);
+          raw[y * W + x] = noise(u + 13.1, v, Math.min(L.oct, name === 'high' ? 4 : 3));
         }
       }
       // Threshold at the quantile that gives the forecast coverage.
       const sorted = Float32Array.from(raw.filter((_, i) => i % 7 === 0)).sort();
       const th = cover <= 0.01 ? 2 : sorted[Math.floor((1 - cover) * (sorted.length - 1))];
-      const soft = name === 'high' ? 0.08 : 0.05;
+      const soft = name === 'high' ? 0.14 : 0.11;
       const dens = new Float32Array(W * horizon);
       for (let y = 0; y < horizon; y++) {
         const yy = y / horizon;
@@ -119,14 +119,14 @@ export class SkyRenderer {
         const band = smooth(top, top + 0.15, yy) * (1 - smooth(L.bottom - 0.02, L.bottom, yy));
         for (let x = 0; x < W; x++) {
           const i = y * W + x;
-          dens[i] = smooth(th - soft, th + soft, raw[i]) * band * (name === 'high' ? 0.75 : 0.92);
+          dens[i] = smooth(th - soft, th + soft, raw[i]) * band * (name === 'high' ? 0.68 : name === 'mid' ? 0.8 : 0.85);
         }
       }
       fields[name] = dens;
     }
     const gnoise = makeNoise(seed + 5);
     const ground = new Float32Array(W);
-    for (let x = 0; x < W; x++) ground[x] = horizon - Math.max(0, gnoise(x / 90, 0.5, 4) - 0.35) * H * 0.12;
+    for (let x = 0; x < W; x++) ground[x] = horizon - Math.max(0, gnoise(x / 140, 0.5, 3) - 0.3) * H * 0.07;
     this.cache = { W, H, horizon, fields, ground, cond };
   }
 
@@ -177,7 +177,7 @@ export class SkyRenderer {
         const i = (y * W + x) * 4;
         if (y >= horizon) {
           // ground silhouette
-          const g = mix(hex('#5e5040'), hor, 0.18 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
+          const g = mix(hex('#4a3d4c'), hor, 0.2);
           d[i] = g[0]; d[i + 1] = g[1]; d[i + 2] = g[2]; d[i + 3] = 255;
           continue;
         }
@@ -192,7 +192,7 @@ export class SkyRenderer {
           const den = fields[name][y * W + x] * (name === 'low' ? 1 : 1 - 0.9 * lowOver);
           if (den <= 0.003) continue;
           const L = light[name];
-          const shade = mix(base, hex('#3b3e4f'), name === 'low' ? 0.55 : 0.35).map((v) => v * (0.45 + 0.55 * sunlit));
+          const shade = mix(base, hex('#6a6380'), name === 'low' ? 0.4 : 0.25).map((v) => v * (0.62 + 0.38 * sunlit));
           let lc = mix(shade, L.col.map((v) => v * (0.75 + 0.25 * fwd)), L.lit * (0.55 + 0.45 * clarity));
           if (name === 'low' && L.el > 0.2) lc = mix(lc, shade, 0.35);
           c = mix(c, lc, den);
@@ -216,11 +216,18 @@ export class SkyRenderer {
     const ctx = this.ctx;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(this.buf, 0, 0, cv.width, cv.height);
-    // Smooth hill silhouette drawn at full resolution.
-    const g = mix(hex('#5e5040'), hor, 0.18 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
+    // Soft focus: blur the low-res sky as it scales up, for a smooth, dreamy look.
+    ctx.filter = `blur(${Math.max(1, (cv.width / W) * 0.9)}px)`;
+    ctx.drawImage(this.buf, -4, -4, cv.width + 8, cv.height + 8);
+    ctx.filter = 'none';
+    // Gentle distant hills, lit from the horizon and fading darker toward the bottom.
     const sx = cv.width / W, sy = cv.height / H;
-    ctx.fillStyle = `rgb(${g.map(Math.round).join(',')})`;
+    const top = mix(mix(hex('#7a6676'), hor, 0.35), hex('#2f2836'), 1 - (0.45 + 0.55 * sunlit));
+    const bot = mix(hex('#3a3040'), hor, 0.08).map((v) => v * (0.7 + 0.3 * sunlit));
+    const grad = ctx.createLinearGradient(0, horizon * sy - H * 0.07 * sy, 0, cv.height);
+    grad.addColorStop(0, `rgb(${top.map(Math.round).join(',')})`);
+    grad.addColorStop(1, `rgb(${bot.map(Math.round).join(',')})`);
+    ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(0, cv.height);
     for (let x = 0; x < W; x++) ctx.lineTo(x * sx, ground[x] * sy);

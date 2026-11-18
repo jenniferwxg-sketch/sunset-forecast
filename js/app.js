@@ -1,7 +1,7 @@
-import { fetchForecast, searchPlaces } from './api.js?v=10';
-import { buildDays, labelFor } from './score.js?v=10';
-import { sunPosition, compass } from './sun.js?v=10';
-import { SkyRenderer } from './sky.js?v=10';
+import { fetchForecast, searchPlaces } from './api.js?v=11';
+import { buildDays, labelFor } from './score.js?v=11';
+import { sunPosition, compass } from './sun.js?v=11';
+import { SkyRenderer } from './sky.js?v=11';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -212,16 +212,16 @@ function renderDetails() {
 
 function slot(ev, kind, i, off) {
   const sel = state.sel.i === i && state.sel.kind === kind;
-  const name = kind === 'sunrise' ? 'Sunrise' : 'Sunset';
-  if (!ev) return `<button class="slot none" disabled><span class="sk">${name}</span><span class="ss">—</span></button>`;
-  return `<button class="slot t-${ev.tone}${sel ? ' sel' : ''}${ev.past ? ' past' : ''}" data-i="${i}" data-k="${kind}" aria-pressed="${sel}">
-    <span class="sk">${name} ${fmtTime(ev.t, off)}</span><span class="ss"><i aria-hidden="true"></i>${ev.label}</span></button>`;
+  const name = kind === 'sunrise' ? 'Rise' : 'Set';
+  if (!ev) return `<button class="slot none" disabled aria-label="${kind}: no forecast"><i></i><span>${name}</span></button>`;
+  return `<button class="slot t-${ev.tone}${sel ? ' sel' : ''}${ev.past ? ' past' : ''}" data-i="${i}" data-k="${kind}" aria-pressed="${sel}"
+    aria-label="${kind} ${fmtTime(ev.t, off)}: ${ev.label}" title="${kind === 'sunrise' ? 'Sunrise' : 'Sunset'} ${fmtTime(ev.t, off)} · ${ev.label}"><i></i><span>${name}</span></button>`;
 }
 
 function renderWeek() {
   $('#week').innerHTML = state.days.map((d, i) => `
     <div class="day"><h4>${fmtDay(d.start, d.offset, i)}</h4>
-      ${slot(d.sunrise, 'sunrise', i, d.offset)}${slot(d.sunset, 'sunset', i, d.offset)}
+      <div class="pair">${slot(d.sunrise, 'sunrise', i, d.offset)}${slot(d.sunset, 'sunset', i, d.offset)}</div>
     </div>`).join('');
 }
 
