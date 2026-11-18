@@ -1,7 +1,7 @@
-import { fetchForecast, searchPlaces } from './api.js?v=8';
-import { buildDays, labelFor } from './score.js?v=8';
-import { sunPosition, compass } from './sun.js?v=8';
-import { SkyRenderer } from './sky.js?v=8';
+import { fetchForecast, searchPlaces } from './api.js?v=10';
+import { buildDays, labelFor } from './score.js?v=10';
+import { sunPosition, compass } from './sun.js?v=10';
+import { SkyRenderer } from './sky.js?v=10';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -44,7 +44,6 @@ function loadPlace() { try { return JSON.parse(localStorage.getItem('glowcast.pl
 async function load(place) {
   state.place = place;
   $('#place-name').textContent = place.name;
-  $('#place-region').textContent = place.region || `${place.lat.toFixed(2)}°, ${place.lon.toFixed(2)}°`;
   setStatus('Loading the forecast…');
   try {
     const data = window.SNAPSHOT ? snapshotFor(place) : await fetchForecast(place.lat, place.lon);
@@ -95,11 +94,10 @@ function setStatus(msg, isErr = false) {
 }
 
 function renderAll() {
-  renderHero();
-  renderTimes();
-  renderWhy();
+  renderSummary();
+  renderFacts();
   renderSpots();
-  renderConditions();
+  renderDetails();
   renderWeek();
 }
 
@@ -108,73 +106,79 @@ function current() {
   return { day: state.days[i], ev: state.days[i][kind], kind, i };
 }
 
+const DIRS = { N: 'north', NNE: 'north-northeast', NE: 'northeast', ENE: 'east-northeast', E: 'east', ESE: 'east-southeast', SE: 'southeast', SSE: 'south-southeast', S: 'south', SSW: 'south-southwest', SW: 'southwest', WSW: 'west-southwest', W: 'west', WNW: 'west-northwest', NW: 'northwest', NNW: 'north-northwest' };
+const dirWords = (az) => DIRS[compass(az)];
+const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+
+function whenText(i, kind, day) {
+  if (i === 0) return kind === 'sunset' ? 'Tonight’s sunset' : 'This morning’s sunrise';
+  if (i === 1) return kind === 'sunset' ? 'Tomorrow’s sunset' : 'Tomorrow’s sunrise';
+  return `${new Date(day.start + day.offset + 43200000).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })} ${kind}`;
+}
+
 function drawSky() {
-  const { ev } = current();
+  const { ev, day } = current();
   if (!ev) return;
   const t = ev.t + state.offset * 60000;
   const e = sunPosition(t, state.place.lat, state.place.lon).elevation;
   sky.render(e, ev.parts);
-  const off = current().day.offset;
   const rel = state.offset === 0 ? `at ${ev.kind}` : `${Math.abs(state.offset)} min ${state.offset < 0 ? 'before' : 'after'} ${ev.kind}`;
-  $('#scrub-label').textContent = `${fmtTime(t, off)}, ${rel}`;
-  $('#scrub-elev').textContent = `Sun ${e >= 0 ? '+' : '−'}${Math.abs(e).toFixed(1)}°`;
+  $('#scrub-label').textContent = `${fmtTime(t, day.offset)}, ${rel}`;
 }
 
-function renderHero() {
+function renderSummary() {
   const { day, ev, kind, i } = current();
-  const hero = $('#hero');
+  const v = $('#verdict');
+  $('#v-when').textContent = whenText(i, kind, day);
   if (!ev) {
-    hero.dataset.tone = 'poor';
-    $('#hero-kind').textContent = `${fmtDay(day.start, day.offset, i)} · ${kind}`;
-    $('#hero-score').textContent = '—';
-    $('#hero-label').textContent = 'No forecast';
-    $('#hero-line').textContent = 'The sun does not rise or set on this day here, or the forecast does not reach it yet.';
+    v.dataset.tone = 'poor';
+    $('#v-label').textContent = 'No forecast';
+    $('#v-score').textContent = '—';
+    $('#v-line').textContent = 'The sun does not rise or set here on this day, or the forecast does not reach it yet.';
+    $('#why').innerHTML = ''; $('#v-conf').textContent = ''; $('#stamp').textContent = '';
     return;
   }
-  hero.dataset.tone = ev.tone;
-  $('#hero-kind').textContent = `${fmtDay(day.start, day.offset, i)} · ${kind} ${fmtTime(ev.t, day.offset)}`;
-  $('#hero-score').textContent = ev.score;
-  $('#hero-label').textContent = ev.label;
-  $('#hero-line').textContent = ev.headline;
-  $('#hero-conf').textContent = `${ev.confidence.level} confidence. ${ev.confidence.note}`;
-  $('#hero-dir').textContent = `Look ${compass(ev.az)} (${Math.round(ev.az)}°)`;
+  v.dataset.tone = ev.tone;
+  $('#v-label').textContent = ev.label;
+  $('#v-score').textContent = ev.score;
+  $('#v-line').textContent = ev.headline;
+  $('#why').innerHTML = ev.factors.map((f) => `<li>${f.text}</li>`).join('');
+  $('#v-conf').textContent = `Confidence: ${ev.confidence.level.toLowerCase()}. ${ev.confidence.note}`;
+  $('#stamp').textContent = `Facing ${dirWords(ev.az)}`;
   requestAnimationFrame(drawSky);
 }
 
-function renderTimes() {
+function renderFacts() {
   const { day, kind } = current();
   const e = day.events, o = day.offset;
+  const range = (a, b) => (a && b ? `${fmtTime(a, o)} – ${fmtTime(b, o)}` : '—');
   const rows = kind === 'sunrise'
     ? [
-        ['Civil twilight starts', fmtTime(e.civilDawn, o)],
-        ['Blue hour', `${fmtTime(e.civilDawn, o)} – ${fmtTime(e.blueDawnEnd, o)}`],
         ['Sunrise', fmtTime(e.sunrise, o)],
-        ['Sun rises toward', e.sunriseAz ? `${Math.round(e.sunriseAz)}° ${compass(e.sunriseAz)}` : '—'],
-        ['Golden hour', `${fmtTime(e.sunrise, o)} – ${fmtTime(e.goldenMorningEnd, o)}`],
-        ['Sunset', fmtTime(e.sunset, o)],
+        ['Look toward', e.sunriseAz ? cap(dirWords(e.sunriseAz)) : '—', e.sunriseAz ? `${Math.round(e.sunriseAz)}°` : ''],
+        ['Blue hour', range(e.civilDawn, e.blueDawnEnd)],
+        ['Golden hour', range(e.sunrise, e.goldenMorningEnd)],
       ]
     : [
-        ['Golden hour', `${fmtTime(e.goldenEveningStart, o)} – ${fmtTime(e.sunset, o)}`],
         ['Sunset', fmtTime(e.sunset, o)],
-        ['Sun sets toward', e.sunsetAz ? `${Math.round(e.sunsetAz)}° ${compass(e.sunsetAz)}` : '—'],
-        ['Blue hour', `${fmtTime(e.blueDuskStart, o)} – ${fmtTime(e.civilDusk, o)}`],
-        ['Civil twilight ends', fmtTime(e.civilDusk, o)],
-        ['Sunrise', fmtTime(e.sunrise, o)],
+        ['Look toward', e.sunsetAz ? cap(dirWords(e.sunsetAz)) : '—', e.sunsetAz ? `${Math.round(e.sunsetAz)}°` : ''],
+        ['Golden hour', range(e.goldenEveningStart, e.sunset)],
+        ['Blue hour', range(e.blueDuskStart, e.civilDusk)],
       ];
-  $('#times').innerHTML = rows.map(([k, v]) => `<div class="trow"><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  $('#facts').innerHTML = rows.map(([k, v, x]) => `<div><dt>${k}</dt><dd>${v}${x ? ` <small>${x}</small>` : ''}</dd></div>`).join('');
 }
 
 // Montreal viewpoints, each with the source that states its view direction.
 const MTL = { lat: 45.5019, lon: -73.5674 };
 const SPOTS = {
   sunset: [
-    { name: 'Olmsted Trail "Sunset lookout", Mount Royal', note: 'Tourisme Montréal recommends this spot because it faces west. It is marked "Sunset lookout" on Google Maps.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
-    { name: 'Parc René-Lévesque, Lachine', note: 'A peninsula at the western end of the Lachine Canal, with views across Lac Saint-Louis from the benches at its tip.', src: 'https://www.mtlblog.com/montreal/9-spots-to-catch-sunset-views-in-near-montreal/parc-rene-levesque-parc-st-louis-in-lachine', srcName: 'MTL Blog (2020)' },
-    { name: 'Parc Jean-Drapeau, Trois Disques sculpture', note: 'Listed by Tourisme Montréal as a sunset spot, looking across the St. Lawrence to the downtown skyline.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+    { name: 'Sunset lookout, Olmsted Trail, Mount Royal', note: 'Faces west. Marked “Sunset lookout” on Google Maps.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+    { name: 'Parc René-Lévesque, Lachine', note: 'Benches at the tip look out over Lac Saint-Louis.', src: 'https://www.mtlblog.com/montreal/9-spots-to-catch-sunset-views-in-near-montreal/parc-rene-levesque-parc-st-louis-in-lachine', srcName: 'MTL Blog' },
+    { name: 'Trois Disques sculpture, Parc Jean-Drapeau', note: 'Looks across the river to the downtown skyline.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
   ],
   sunrise: [
-    { name: 'Camillien-Houde Lookout, Mount Royal', note: 'The City of Montréal describes its view of the east side of Montreal, toward the Olympic Stadium tower. Open 6 AM to 11 PM.', src: 'https://montreal.ca/en/places/camillien-houde-lookout', srcName: 'Ville de Montréal' },
-    { name: 'Kondiaronk Belvedere, Mount Royal', note: 'Tourisme Montréal notes that this lookout faces east.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
+    { name: 'Camillien-Houde Lookout, Mount Royal', note: 'Looks over the east side of the city. Open from 6 AM.', src: 'https://montreal.ca/en/places/camillien-houde-lookout', srcName: 'Ville de Montréal' },
+    { name: 'Kondiaronk Belvedere, Mount Royal', note: 'Faces east.', src: 'https://www.mtl.org/en/experience/best-places-montreal-to-watch-sunset', srcName: 'Tourisme Montréal' },
   ],
 };
 function nearMontreal(p) {
@@ -186,53 +190,38 @@ function renderSpots() {
   const { ev, kind } = current();
   panel.hidden = !nearMontreal(state.place) || !ev;
   if (panel.hidden) return;
-  $('#spots-dir').innerHTML = `The sun ${kind === 'sunset' ? 'sets' : 'rises'} at <b>${Math.round(ev.az)}° (${compass(ev.az)})</b> on this day. Pick a spot with an open view that way.`;
-  $('#spots').innerHTML = SPOTS[kind].map((x) => `<li><b>${x.name}</b><span>${x.note}</span><a href="${x.src}" target="_blank" rel="noopener">Source: ${x.srcName}</a></li>`).join('');
+  $('#spots-dir').textContent = `The sun ${kind === 'sunset' ? 'sets' : 'rises'} in the ${dirWords(ev.az)}. These spots have an open view that way.`;
+  $('#spots').innerHTML = SPOTS[kind].map((x) => `<li><b>${x.name}</b> <span>${x.note}</span> <a href="${x.src}" target="_blank" rel="noopener">${x.srcName}</a></li>`).join('');
 }
 
-function renderWhy() {
+function renderDetails() {
   const { ev } = current();
-  $('#why').innerHTML = ev
-    ? ev.factors.map((f) => `<li class="fx-${f.fx}"><span class="fx-mark" aria-hidden="true">${f.fx === 'plus' ? '+' : f.fx === 'minus' ? '−' : '•'}</span><span>${f.text}</span></li>`).join('')
-    : '';
-  $('#models').innerHTML = ev && ev.models
-    ? ev.models.map((m) => `<div class="model t-${m.tone}${m.median ? ' mid' : ''}"><span class="mn">${m.label}</span><span class="mf">${m.from}</span><b>${m.score}</b></div>`).join('')
-    : '';
+  if (!ev) { $('#models').innerHTML = ''; $('#cond').innerHTML = ''; return; }
+  $('#models').innerHTML = ev.models.map((m) => `<span class="model${m.median ? ' mid' : ''}">${m.label} <b>${m.score}</b></span>`).join('');
+  const c = ev.cond, P = ev.parts;
+  const rows = [
+    ['High clouds', pct(c.high)], ['Middle clouds', pct(c.mid)], ['Low clouds above you', pct(c.low)],
+    [`Low clouds toward the sun`, pct(P.pathLow)],
+    ['Humidity', c.rh == null ? '—' : `${Math.round(c.rh)}%`],
+    ['Visibility', c.vis == null ? '—' : `${(c.vis / 1000).toFixed(0)} km`],
+    ['Smoke and dust (aerosol)', c.aod == null ? 'not available' : c.aod.toFixed(2)],
+    ['Chance of rain', pct(c.pop)],
+  ];
+  $('#cond').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 }
 
-function meter(label, value, display, hint) {
-  const w = value == null ? 0 : Math.round(Math.max(0, Math.min(1, value)) * 100);
-  return `<div class="meter"><div class="mtop"><span>${label}</span><b>${display}</b></div><div class="mbar"><i style="width:${w}%"></i></div>${hint ? `<small>${hint}</small>` : ''}</div>`;
-}
-
-function renderConditions() {
-  const { ev } = current();
-  if (!ev) { $('#cond').innerHTML = ''; return; }
-  const c = ev.cond, P = ev.parts, dir = compass(ev.az);
-  $('#cond').innerHTML = [
-    meter('High cloud', c.high, pct(c.high), 'Above 6 km. Catches color longest.'),
-    meter('Mid cloud', c.mid, pct(c.mid), '2 to 6 km.'),
-    meter('Low cloud overhead', c.low, pct(c.low), 'Below 2 km. Too much hides the sky.'),
-    meter(`Low cloud toward the sun`, P.pathLow, pct(P.pathLow), `60 to 300 km ${dir}. Blocks the light.`),
-    meter('Humidity', c.rh == null ? null : c.rh / 100, c.rh == null ? '—' : `${Math.round(c.rh)}%`),
-    meter('Visibility', c.vis == null ? null : Math.min(1, c.vis / 30000), c.vis == null ? '—' : `${(c.vis / 1000).toFixed(0)} km`),
-    meter('Aerosol optical depth', c.aod == null ? null : Math.min(1, c.aod / 0.8), c.aod == null ? 'n/a' : c.aod.toFixed(2), c.aod == null ? 'Only forecast 5 days out.' : 'Smoke, dust, pollution.'),
-    meter('Chance of rain', c.pop, pct(c.pop)),
-  ].join('');
-}
-
-function chip(ev, kind, i, off) {
+function slot(ev, kind, i, off) {
   const sel = state.sel.i === i && state.sel.kind === kind;
-  if (!ev) return `<button class="chip none" disabled><span class="ck">${kind === 'sunrise' ? 'Rise' : 'Set'}</span><span class="cs">—</span></button>`;
-  return `<button class="chip t-${ev.tone}${sel ? ' sel' : ''}${ev.past ? ' past' : ''}" data-i="${i}" data-k="${kind}" aria-pressed="${sel}">
-    <span class="ck">${kind === 'sunrise' ? 'Rise' : 'Set'} <em>${fmtTime(ev.t, off)}</em></span>
-    <span class="cs">${ev.score}</span><span class="cl">${ev.label}</span></button>`;
+  const name = kind === 'sunrise' ? 'Sunrise' : 'Sunset';
+  if (!ev) return `<button class="slot none" disabled><span class="sk">${name}</span><span class="ss">—</span></button>`;
+  return `<button class="slot t-${ev.tone}${sel ? ' sel' : ''}${ev.past ? ' past' : ''}" data-i="${i}" data-k="${kind}" aria-pressed="${sel}">
+    <span class="sk">${name} ${fmtTime(ev.t, off)}</span><span class="ss"><i aria-hidden="true"></i>${ev.label}</span></button>`;
 }
 
 function renderWeek() {
   $('#week').innerHTML = state.days.map((d, i) => `
-    <div class="day"><h3>${fmtDay(d.start, d.offset, i)}</h3>
-      ${chip(d.sunrise, 'sunrise', i, d.offset)}${chip(d.sunset, 'sunset', i, d.offset)}
+    <div class="day"><h4>${fmtDay(d.start, d.offset, i)}</h4>
+      ${slot(d.sunrise, 'sunrise', i, d.offset)}${slot(d.sunset, 'sunset', i, d.offset)}
     </div>`).join('');
 }
 
@@ -276,7 +265,7 @@ $('#locate').addEventListener('click', () => {
 });
 
 $('#week').addEventListener('click', (e) => {
-  const b = e.target.closest('button.chip[data-i]');
+  const b = e.target.closest('button.slot[data-i]');
   if (b) select(+b.dataset.i, b.dataset.k);
 });
 
@@ -288,7 +277,5 @@ window.addEventListener('resize', () => {
   resizeTimer = setTimeout(() => { if (state.sel) select(state.sel.i, state.sel.kind); }, 200);
 });
 
-$('#presets').innerHTML = PRESETS.map((p, k) => `<button data-k="${k}">${p.name}</button>`).join('');
-$('#presets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) load(PRESETS[+b.dataset.k]); });
 
 load(loadPlace() && !window.SNAPSHOT ? loadPlace() : DEFAULT_PLACE);

@@ -10,103 +10,77 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=DM+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 <!--BODY-->
 <header class="top">
-  <div class="brand">
-    <span class="mark" aria-hidden="true"></span>
-    <span>Glowcast</span>
-  </div>
-  <div class="search">
-    <label for="q" class="sr">Search for a place</label>
-    <input id="q" type="search" placeholder="Search a city or town" autocomplete="off">
-    <ul id="results" class="results" hidden></ul>
-  </div>
-  <button id="locate" class="ghost" type="button">Use my location</button>
+  <a class="brand" href="./"><span class="mark" aria-hidden="true"></span>Glowcast</a>
+  <a class="navlink" href="how.html">How it works</a>
 </header>
 
 <main class="wrap">
-  <div class="place">
-    <div>
-      <h1 id="place-name">Montreal</h1>
-      <p id="place-region" class="muted">Quebec, Canada</p>
+  <section class="where">
+    <h1 id="place-name">Montreal</h1>
+    <div class="search">
+      <label for="q" class="sr">Change city</label>
+      <input id="q" type="search" placeholder="Change city" autocomplete="off">
+      <ul id="results" class="results" hidden></ul>
+      <button id="locate" class="textbtn" type="button">Use my location</button>
     </div>
-    <nav id="presets" class="presets" aria-label="Sample places"></nav>
-  </div>
+  </section>
   <p id="status" class="status" hidden></p>
 
-  <section id="hero" class="hero" data-tone="good" aria-label="Selected forecast">
+  <section id="hero" class="hero" data-tone="good" aria-label="Sky preview">
     <div class="stage">
-      <canvas id="sky" aria-label="Preview of how the sky may look"></canvas>
-      <div class="overlay">
-        <p id="hero-kind" class="kind">Today · sunset</p>
-        <div class="scoreline">
-          <span id="hero-score" class="score">—</span>
-          <span class="of">/100</span>
-          <span id="hero-label" class="label">…</span>
-        </div>
-        <p id="hero-line" class="line"></p>
-      </div>
-      <p id="hero-dir" class="dir"></p>
+      <canvas id="sky" aria-label="Illustration of how the sky may look"></canvas>
+      <p id="stamp" class="stamp"></p>
     </div>
-    <div class="scrubber">
-      <label for="scrub">Preview time</label>
+    <div class="scrub">
+      <label for="scrub" class="sr">Preview time</label>
       <input id="scrub" type="range" min="-45" max="40" step="1" value="8">
-      <div class="scrub-meta"><span id="scrub-label"></span><span id="scrub-elev" class="mono"></span></div>
+      <p class="scrub-meta"><span id="scrub-label"></span><span class="hint">Drag to see the sky change</span></p>
     </div>
-    <p class="accuracy" role="note"><b>What is measured and what is estimated.</b> Sun times and directions are calculated with NOAA's published solar formulas. Cloud, humidity, visibility and aerosol numbers come straight from the weather models. The color score is Glowcast's own model: it combines those numbers using known causes of colorful skies, but the weights are our choices and its accuracy has not been measured yet. The sky picture is an illustration of the forecast, not a photo.</p>
   </section>
 
-  <div class="grid">
-    <section class="panel">
-      <h2>Times</h2>
-      <dl id="times" class="times"></dl>
-      <p class="muted small">Golden hour: sun between 6° above and 0.8° below the horizon. Blue hour: sun 4° to 6° below. Civil twilight ends when the sun is 6° below.</p>
-      <p id="hero-conf" class="conf"></p>
-    </section>
-    <section class="panel">
-      <h2>Why this score</h2>
+  <section class="summary">
+    <div class="verdict" id="verdict" data-tone="good">
+      <p id="v-when" class="eyebrow">Tonight</p>
+      <h2 class="v-title"><span id="v-label">…</span> <span class="v-score"><span id="v-score">—</span>/100</span></h2>
+      <p id="v-line" class="v-line"></p>
       <ul id="why" class="why"></ul>
-      <h3 class="sub">Weather models</h3>
-      <div id="models" class="models"></div>
-      <p class="muted small">Glowcast scores the sky with each model and shows the middle score. Confidence is a rule, not a measurement: High within about 30 hours, Medium up to about 3 days, Low after that, and one step lower when the models are more than 15 points apart (Low when more than 30).</p>
-    </section>
-    <section id="spots-panel" class="panel wide" hidden>
-      <h2>Where to watch in Montreal</h2>
-      <p id="spots-dir" class="spots-dir"></p>
-      <ul id="spots" class="spots"></ul>
-    </section>
-    <section class="panel wide">
-      <h2>Conditions at that moment</h2>
-      <div id="cond" class="cond"></div>
-    </section>
-  </div>
+      <p id="v-conf" class="v-conf"></p>
+    </div>
+    <dl id="facts" class="facts"></dl>
+  </section>
 
-  <section class="weekwrap">
-    <h2>Next 7 days</h2>
+  <section class="block">
+    <h3 class="eyebrow">This week</h3>
     <div id="week" class="week"></div>
   </section>
 
-  <section class="panel how">
-    <h2>How the forecast works</h2>
-    <p>Sunset and sunrise color comes from sunlight hitting clouds from below after a long, low trip through the air. Glowcast checks three things from the hourly forecast at the exact minute of sunrise or sunset:</p>
-    <ol>
-      <li><b>A canvas.</b> High and mid clouds overhead give the light something to color. Sunset photographers and forecasters often cite partial cover, around 30 to 70%, as best. A clear sky gives a clean gradient but little color on clouds.</li>
-      <li><b>An open light path.</b> Low cloud 60 to 300 km toward the sun can block the light before it arrives. Glowcast checks cloud forecasts at those points in the sun's direction.</li>
-      <li><b>Clean air.</b> Humid, hazy air washes colors out. A little smoke or dust deepens reds, and a lot dims everything.</li>
-    </ol>
-    <p>Glowcast checks four weather models: ECMWF (Europe), GFS (United States), ICON (Germany) and GEM (Canada, which uses the 2.5 km HRDPS model across North America). Each one predicts cloud at three heights for every hour. Glowcast checks those clouds above you and at 60, 150 and 300 km toward the sun.</p>
-    <p>These three factors are well known causes of colorful skies. How much each one counts in the 0 to 100 score is Glowcast's own choice. No public, tested formula exists, and the score has not yet been checked against real sunsets.</p>
-    <p class="muted">The preview image is drawn from those numbers, so treat it as an illustration rather than a photo.</p>
+  <section id="spots-panel" class="block" hidden>
+    <h3 class="eyebrow">Where to watch</h3>
+    <p id="spots-dir" class="spots-dir"></p>
+    <ol id="spots" class="spots"></ol>
   </section>
+
+  <details class="block details">
+    <summary>Forecast details</summary>
+    <div class="details-body">
+      <h4>Score from each weather model</h4>
+      <div id="models" class="models"></div>
+      <h4>Weather at that moment</h4>
+      <dl id="cond" class="cond"></dl>
+    </div>
+  </details>
 </main>
 
 <footer class="foot">
-  <p>Weather and air quality data from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0). Sun times calculated with the NOAA solar position method.</p>
+  <p>Scores are estimates made from weather forecasts, and the sky picture is an illustration. <a href="how.html">How it works and what is measured</a>.</p>
+  <p>Weather data from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
 </footer>
 <!--/BODY-->
-<script type="module" src="js/app.js?v=8"></script>
+<script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>

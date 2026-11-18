@@ -101,7 +101,7 @@ export class SkyRenderer {
       for (let y = 0; y < horizon; y++) {
         const yy = y / horizon;
         // Perspective: depth grows toward the horizon.
-        const depth = 1 / (1.02 - yy);
+        const depth = 14 * Math.tanh(1 / (1.03 - yy) / 14);
         for (let x = 0; x < W; x++) {
           const u = ((x / W) - 0.5) * depth * L.sx * (name === 'high' ? 0.35 : 1);
           const v = depth * L.sy * 0.18 + (name === 'high' ? u * 0.25 : 0);

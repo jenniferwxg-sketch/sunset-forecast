@@ -118,35 +118,32 @@ export function scoreSky(c) {
 
 const p = (x) => `${Math.round(x * 100)}%`;
 
+const DIRWORD = { N: 'north', NNE: 'north', NE: 'northeast', ENE: 'east', E: 'east', ESE: 'east', SE: 'southeast', SSE: 'south', S: 'south', SSW: 'south', SW: 'southwest', WSW: 'west', W: 'west', WNW: 'west', NW: 'northwest', NNW: 'north' };
+
 export function explain(c, r, kind, az) {
-  const dir = compass(az);
+  const dir = DIRWORD[compass(az)];
   const P = r.parts;
   const f = [];
-  // Canvas
-  if (P.canvas < 0.1) f.push({ fx: 'neutral', text: `Almost no high or mid cloud (${p(P.canvas)}). Color will stay in a band along the horizon.` });
-  else if (P.canvasQ > 0.8) f.push({ fx: 'plus', text: `${p(P.canvas)} high and mid cloud overhead. That is a good canvas for color.` });
-  else if (P.canvas >= 0.9) f.push({ fx: 'neutral', text: `High and mid cloud covers ${p(P.canvas)} of the sky. It can light up fully if the light gets underneath.` });
-  else f.push({ fx: 'neutral', text: `Thin high and mid cloud (${p(P.canvas)}). Some color is possible.` });
-  // Path
+  if (P.canvas < 0.1) f.push({ fx: 'neutral', text: 'Almost no high clouds, so the color will stay in a band along the horizon.' });
+  else if (P.canvas >= 0.9) f.push({ fx: 'neutral', text: `High clouds cover the sky (${p(P.canvas)}). They can all light up if the sun gets underneath.` });
+  else if (P.canvasQ > 0.8) f.push({ fx: 'plus', text: `Plenty of high clouds (${p(P.canvas)}) to catch the color.` });
+  else f.push({ fx: 'neutral', text: `A few high clouds (${p(P.canvas)}), so some color is possible.` });
   if (P.canvas >= 0.1) {
-    if (P.pathLow > 0.55) f.push({ fx: 'minus', text: `Low cloud ${p(P.pathLow)} along the light path ${PATH_KM[0]}-${PATH_KM.at(-1)} km ${dir}. It may block the sun's light before it reaches your clouds.` });
-    else if (P.pathLow < 0.2) f.push({ fx: 'plus', text: `Clear light path toward the sun (${dir}): ${P.pathLow < 0.03 ? 'no' : 'only ' + p(P.pathLow)} low cloud out to ${PATH_KM.at(-1)} km.` });
-    else f.push({ fx: 'neutral', text: `Some low cloud toward the sun (${p(P.pathLow)}, ${dir}). Light may get through in gaps.` });
+    if (P.pathLow > 0.55) f.push({ fx: 'minus', text: `Thick low clouds out to the ${dir} may block the sun's light.` });
+    else if (P.pathLow < 0.2) f.push({ fx: 'plus', text: `Nothing blocking the sun out to the ${dir}.` });
+    else f.push({ fx: 'neutral', text: `Some low clouds out to the ${dir}. Light may get through the gaps.` });
   }
-  // Local low
-  if (c.low > 0.65) f.push({ fx: 'minus', text: `Low overcast overhead (${p(c.low)}) will hide most of the sky.` });
-  else if (c.low > 0.12 && c.low < 0.4) f.push({ fx: 'plus', text: `Scattered low cloud (${p(c.low)}) can catch deep red light right at the horizon.` });
-  // Air
-  if (c.rh != null && c.rh >= 80) f.push({ fx: 'minus', text: `Humidity ${Math.round(c.rh)}% will soften and wash out colors.` });
-  else if (c.rh != null && c.rh <= 55) f.push({ fx: 'plus', text: `Dry air (${Math.round(c.rh)}% humidity) keeps colors crisp.` });
-  if (c.vis != null && c.vis < 10000) f.push({ fx: 'minus', text: `Visibility ${(c.vis / 1000).toFixed(1)} km. Haze or fog will mute the light.` });
+  if (c.low > 0.65) f.push({ fx: 'minus', text: `Low gray clouds overhead (${p(c.low)}) will hide most of the sky.` });
+  else if (c.low > 0.12 && c.low < 0.4) f.push({ fx: 'plus', text: 'A few low clouds can glow deep red right at the horizon.' });
+  if (c.rh != null && c.rh >= 80) f.push({ fx: 'minus', text: `Humid air (${Math.round(c.rh)}%) will soften the colors.` });
+  else if (c.rh != null && c.rh <= 55) f.push({ fx: 'plus', text: 'Dry air keeps the colors crisp.' });
+  if (c.vis != null && c.vis < 10000) f.push({ fx: 'minus', text: 'Haze or fog will dull the light.' });
   if (c.aod != null) {
-    if (c.aod > 0.5) f.push({ fx: 'minus', text: `Heavy aerosol (optical depth ${c.aod.toFixed(2)}): smoke or dust will dim the sun into a red disc.` });
-    else if (c.aod >= 0.15) f.push({ fx: 'plus', text: `Moderate aerosol (optical depth ${c.aod.toFixed(2)}) can deepen the reds.` });
+    if (c.aod > 0.5) f.push({ fx: 'minus', text: 'Heavy smoke or dust will dim the sun.' });
+    else if (c.aod >= 0.15) f.push({ fx: 'plus', text: 'A little dust or haze in the air can deepen the reds.' });
   }
-  // Rain
-  if (c.precip > 0.2) f.push({ fx: 'minus', text: `Rain likely (${Math.round(c.pop * 100)}% chance, ${c.precip.toFixed(1)} mm/h).` });
-  if (P.clearing) f.push({ fx: 'plus', text: `Rain clearing just before ${kind}. Clean, freshly washed air often gives standout color.` });
+  if (c.precip > 0.2) f.push({ fx: 'minus', text: `Rain is likely around then (${Math.round(c.pop * 100)}% chance).` });
+  if (P.clearing) f.push({ fx: 'plus', text: `Rain clears just before ${kind}, and freshly washed air can give bright color.` });
   return f;
 }
 
@@ -154,9 +151,9 @@ export function headline(c, r, kind) {
   const P = r.parts;
   if (c.precip > 0.3 && c.pop > 0.5) return `Rain is likely around ${kind}. The sky will probably stay gray.`;
   if (c.low > 0.75) return `Thick low cloud. Expect a gray ${kind}, maybe a brief glow at the edges.`;
-  if (P.canvas < 0.1) return `Mostly clear. A clean orange-to-blue gradient along the horizon, without much cloud color.`;
-  if (P.pathLow > 0.55) return `Clouds overhead, but a cloud bank toward the sun may cut off the light.`;
-  if (r.score >= 80) return `High clouds with an open path to the sun. Good odds of the whole sky turning pink and orange.`;
+  if (P.canvas < 0.1) return `Mostly clear. Expect a soft orange glow along the horizon, without much color in the sky above.`;
+  if (P.pathLow > 0.55) return `There are clouds overhead, but clouds near the horizon may block the light.`;
+  if (r.score >= 80) return `High clouds and nothing blocking the sun. Good odds of the sky turning pink and orange.`;
   if (r.score >= 62) return `A promising setup. Clouds overhead should catch strong color.`;
   if (r.score >= 45) return `Decent odds of some color on the clouds.`;
   return `Muted colors are most likely.`;
@@ -168,8 +165,8 @@ function confidence(tMs, spread, n) {
   if (n > 1 && spread > 30) lvl = Math.min(lvl, 0);
   else if (n > 1 && spread > 15) lvl = Math.max(0, lvl - 1);
   const level = ['Low', 'Medium', 'High'][lvl];
-  const lead = h < 30 ? 'Forecast within about a day.' : h < 78 ? 'Cloud forecasts shift a lot 2 to 3 days out.' : 'Cloud forecasts this far out are a rough guide.';
-  const agree = n < 2 ? '' : spread <= 15 ? ` The ${n} weather models agree.` : spread <= 30 ? ` The ${n} weather models partly disagree.` : ` The ${n} weather models disagree a lot.`;
+  const lead = h < 30 ? 'It’s less than a day away.' : h < 78 ? 'It’s a few days away, and cloud forecasts often change.' : 'It’s far away, so treat this as a rough guide.';
+  const agree = n < 2 ? '' : spread <= 15 ? ` The ${n} weather forecasts agree.` : spread <= 30 ? ` The ${n} weather forecasts partly disagree.` : ` The ${n} weather forecasts disagree a lot.`;
   return { level, note: lead + agree };
 }
 
