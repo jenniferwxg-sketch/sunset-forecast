@@ -177,7 +177,7 @@ export class SkyRenderer {
         const i = (y * W + x) * 4;
         if (y >= horizon) {
           // ground silhouette
-          const g = mix(hex('#4b3d68'), hor, 0.16 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
+          const g = mix(hex('#5e5040'), hor, 0.18 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
           d[i] = g[0]; d[i + 1] = g[1]; d[i + 2] = g[2]; d[i + 3] = 255;
           continue;
         }
@@ -218,7 +218,7 @@ export class SkyRenderer {
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(this.buf, 0, 0, cv.width, cv.height);
     // Smooth hill silhouette drawn at full resolution.
-    const g = mix(hex('#4b3d68'), hor, 0.16 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
+    const g = mix(hex('#5e5040'), hor, 0.18 + 0.08 * sunlit).map((v) => v * (0.6 + 0.4 * sunlit));
     const sx = cv.width / W, sy = cv.height / H;
     ctx.fillStyle = `rgb(${g.map(Math.round).join(',')})`;
     ctx.beginPath();
