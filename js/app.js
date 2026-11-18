@@ -1,7 +1,7 @@
-import { fetchForecast, searchPlaces } from './api.js?v=3';
-import { buildDays, labelFor } from './score.js?v=3';
-import { sunPosition, compass } from './sun.js?v=3';
-import { SkyRenderer } from './sky.js?v=3';
+import { fetchForecast, searchPlaces } from './api.js?v=4';
+import { buildDays, labelFor } from './score.js?v=4';
+import { sunPosition, compass } from './sun.js?v=4';
+import { SkyRenderer } from './sky.js?v=4';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
