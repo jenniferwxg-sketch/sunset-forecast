@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=25';
-import { buildDays, labelFor } from './score.js?v=25';
-import { sunPosition, compass } from './sun.js?v=25';
-import { SkyRenderer } from './sky.js?v=25';
-import { GLSky } from './sky-gl.js?v=25';
+import { fetchForecast, searchPlaces } from './api.js?v=26';
+import { buildDays, labelFor } from './score.js?v=26';
+import { sunPosition, compass } from './sun.js?v=26';
+import { SkyRenderer } from './sky.js?v=26';
+import { GLSky } from './sky-gl.js?v=26';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
