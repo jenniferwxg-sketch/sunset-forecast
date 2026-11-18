@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=16';
-import { buildDays, labelFor } from './score.js?v=16';
-import { sunPosition, compass } from './sun.js?v=16';
-import { SkyRenderer } from './sky.js?v=16';
-import { GLSky } from './sky-gl.js?v=16';
+import { fetchForecast, searchPlaces } from './api.js?v=17';
+import { buildDays, labelFor } from './score.js?v=17';
+import { sunPosition, compass } from './sun.js?v=17';
+import { SkyRenderer } from './sky.js?v=17';
+import { GLSky } from './sky-gl.js?v=17';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -48,6 +48,7 @@ function loadPlace() { try { return JSON.parse(localStorage.getItem('glowcast.pl
 // ---------- data ----------
 async function load(place) {
   state.place = place;
+  $('#search').hidden = true;
   $('#place-name').textContent = place.name;
   setStatus('Loading the forecast…');
   try {
@@ -138,18 +139,15 @@ function renderSummary() {
   if (!ev) {
     v.dataset.tone = 'poor';
     $('#v-label').textContent = 'No forecast';
-    $('#v-score').textContent = '—';
     $('#v-line').textContent = 'The sun does not rise or set here on this day, or the forecast does not reach it yet.';
-    $('#why').innerHTML = ''; $('#v-conf').textContent = ''; $('#stamp').textContent = '';
+    $('#why').textContent = ''; $('#v-conf').textContent = '';
     return;
   }
   v.dataset.tone = ev.tone;
   $('#v-label').textContent = ev.label;
-  $('#v-score').textContent = ev.score;
   $('#v-line').textContent = ev.headline;
-  $('#why').innerHTML = ev.factors.map((f) => `<li>${f.text}</li>`).join('');
-  $('#v-conf').textContent = `Confidence: ${ev.confidence.level.toLowerCase()}. ${ev.confidence.note}`;
-  $('#stamp').textContent = `Facing ${dirWords(ev.az)}`;
+  $('#why').textContent = ev.factors.slice(0, 3).map((f) => f.text).join(' ');
+  $('#v-conf').textContent = `${ev.confidence.level} confidence. ${ev.confidence.note}`;
   requestAnimationFrame(drawSky);
 }
 
@@ -201,7 +199,8 @@ function renderSpots() {
 
 function renderDetails() {
   const { ev } = current();
-  if (!ev) { $('#models').innerHTML = ''; $('#cond').innerHTML = ''; return; }
+  if (!ev) { $('#models').innerHTML = ''; $('#cond').innerHTML = ''; $('#score-line').textContent = ''; return; }
+  $('#score-line').textContent = `Score: ${ev.score} out of 100 (${ev.label}).`;
   $('#models').innerHTML = ev.models.map((m) => `<span class="model${m.median ? ' mid' : ''}">${m.label} <b>${m.score}</b></span>`).join('');
   const c = ev.cond, P = ev.parts;
   const rows = [
@@ -250,14 +249,21 @@ function showResults(r) {
     : '<li class="msg">No places found. Try a city or town name.</li>';
   list.hidden = false;
   list.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-    list.hidden = true; $('#q').value = ''; load(r[+b.dataset.k]);
+    list.hidden = true; $('#q').value = ''; $('#search').hidden = true; load(r[+b.dataset.k]);
   }));
 }
 
 // ---------- wiring ----------
 $('#q').addEventListener('input', (e) => { clearTimeout(searchTimer); searchTimer = setTimeout(() => doSearch(e.target.value), 250); });
-$('#q').addEventListener('keydown', (e) => { if (e.key === 'Escape') $('#results').hidden = true; });
-document.addEventListener('click', (e) => { if (!e.target.closest('.search')) $('#results').hidden = true; });
+$('#q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('#results').hidden = true; $('#search').hidden = true; $('#city').focus(); } });
+document.addEventListener('click', (e) => { if (!e.target.closest('.search') && !e.target.closest('.where')) { $('#results').hidden = true; if (!$('#q').value) $('#search').hidden = true; } });
+
+function openSearch() {
+  $('#search').hidden = false;
+  $('#q').focus();
+}
+$('#city').addEventListener('click', openSearch);
+$('#change').addEventListener('click', openSearch);
 
 $('#locate').addEventListener('click', () => {
   if (!navigator.geolocation) { setStatus('Your browser does not share location. Search for a place instead.', true); return; }

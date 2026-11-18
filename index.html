@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=DM+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="styles.css?v=16">
+<link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
 <!--BODY-->
@@ -19,62 +19,67 @@
   <a class="navlink" href="how.html">How it works</a>
 </header>
 
-<main class="wrap">
-  <section class="where">
-    <h1 id="place-name">Montreal</h1>
-    <div class="search">
-      <label for="q" class="sr">Change city</label>
-      <input id="q" type="search" placeholder="Change city" autocomplete="off">
+<main class="page">
+  <div class="wrap wrap-top">
+    <section class="where">
+      <h1><button id="city" class="city" type="button" aria-label="Change city"><span id="place-name">Montreal</span></button></h1>
+      <button id="change" class="textbtn" type="button">Change city</button>
+    </section>
+    <div id="search" class="search" hidden>
+      <label for="q" class="sr">Search for a city</label>
+      <input id="q" type="search" placeholder="Type a city or town" autocomplete="off">
       <ul id="results" class="results" hidden></ul>
       <button id="locate" class="textbtn" type="button">Use my location</button>
     </div>
-  </section>
-  <p id="status" class="status" hidden></p>
+    <p id="status" class="status" hidden></p>
+  </div>
 
-  <section id="hero" class="hero" data-tone="good" aria-label="Sky preview">
+  <section id="hero" class="hero" aria-label="Sky preview">
     <div class="stage">
       <canvas id="sky" aria-label="Illustration of how the sky may look"></canvas>
-      <p id="stamp" class="stamp"></p>
     </div>
-    <div class="scrub">
+    <div class="wrap scrub">
+      <p class="hint">Drag to see the sky change</p>
       <label for="scrub" class="sr">Preview time</label>
       <input id="scrub" type="range" min="-45" max="40" step="1" value="4">
-      <p class="scrub-meta"><span id="scrub-label"></span><span class="hint">Drag to see the sky change</span></p>
+      <p class="scrub-meta"><span id="scrub-label"></span></p>
     </div>
   </section>
 
-  <section class="summary">
-    <div class="verdict" id="verdict" data-tone="good">
-      <p id="v-when" class="eyebrow">Tonight</p>
-      <h2 class="v-title"><span id="v-label">…</span> <span class="v-score"><span id="v-score">—</span>/100</span></h2>
-      <p id="v-line" class="v-line"></p>
-      <ul id="why" class="why"></ul>
-      <p id="v-conf" class="v-conf"></p>
-    </div>
-    <dl id="facts" class="facts"></dl>
-  </section>
+  <div class="wrap">
+    <section class="summary">
+      <div class="verdict" id="verdict" data-tone="good">
+        <p id="v-when" class="kicker">Tonight’s sunset</p>
+        <h2 id="v-label" class="v-title">…</h2>
+        <p id="v-line" class="v-line"></p>
+        <p id="why" class="why"></p>
+        <p id="v-conf" class="v-conf"></p>
+      </div>
+      <dl id="facts" class="facts"></dl>
+    </section>
 
-  <section class="block">
-    <h3 class="eyebrow">This week</h3>
-    <div id="week" class="week"></div>
-    <p class="legend"><span class="t-fire"><i></i>Spectacular</span><span class="t-vivid"><i></i>Vivid</span><span class="t-good"><i></i>Good</span><span class="t-fair"><i></i>Fair</span><span class="t-poor"><i></i>Poor</span><span class="tap">Tap a dot to see that day</span></p>
-  </section>
+    <section class="block">
+      <h3 class="heading">This week</h3>
+      <div id="week" class="week"></div>
+    </section>
 
-  <section id="spots-panel" class="block" hidden>
-    <h3 class="eyebrow">Where to watch</h3>
-    <p id="spots-dir" class="spots-dir"></p>
-    <ol id="spots" class="spots"></ol>
-  </section>
+    <section id="spots-panel" class="block" hidden>
+      <h3 class="heading">Where to watch</h3>
+      <p id="spots-dir" class="spots-dir"></p>
+      <ol id="spots" class="spots"></ol>
+    </section>
 
-  <details class="block details">
-    <summary>Forecast details</summary>
-    <div class="details-body">
-      <h4>Score from each weather model</h4>
-      <div id="models" class="models"></div>
-      <h4>Weather at that moment</h4>
-      <dl id="cond" class="cond"></dl>
-    </div>
-  </details>
+    <details class="block details">
+      <summary>Forecast details</summary>
+      <div class="details-body">
+        <p id="score-line" class="score-line"></p>
+        <h4>Score from each weather model</h4>
+        <div id="models" class="models"></div>
+        <h4>Weather at that moment</h4>
+        <dl id="cond" class="cond"></dl>
+      </div>
+    </details>
+  </div>
 </main>
 
 <footer class="foot">
@@ -82,6 +87,6 @@
   <p>Weather data from <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.</p>
 </footer>
 <!--/BODY-->
-<script type="module" src="js/app.js?v=16"></script>
+<script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>

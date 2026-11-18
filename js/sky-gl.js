@@ -164,7 +164,7 @@ void main() {
 
   // distant hills: angle above the horizon by azimuth
   float az = atan(rd.x, -rd.z);
-  float hill = 0.003 + 0.014 * (vnoise(vec2(az * 7.0 + uSeed * 10.0, 1.0)) * 0.75 + vnoise(vec2(az * 23.0, 2.0)) * 0.25);
+  float hill = 0.0035 + 0.0022 * sin(az * 4.0 + uSeed * 6.0) + 0.0014 * sin(az * 11.0 + 1.7) + 0.0007 * sin(az * 27.0 + uSeed * 3.0);
   float horizonY = -0.004;
 
   vec3 col = skyColor(ro, rd, s, 1e9);
@@ -184,10 +184,13 @@ void main() {
   }
 
   // ground: hills silhouette catching a little sky light
+  // Anti-aliased edge (about 1.5 px wide) so the hill line is smooth, not stepped.
   float e = rd.y - hill;
-  if (e < 0.0) {
+  float px = 1.5 * uFov / uRes.y;
+  if (e < px) {
     vec3 hz = skyColor(ro, normalize(vec3(rd.x, 0.02, rd.z)), s, 1e9);
-    col = min(hz, vec3(1.5)) * mix(0.16, 0.05, smoothstep(0.0, 0.3, -rd.y));
+    vec3 land = min(hz, vec3(1.5)) * mix(0.3, 0.1, smoothstep(0.0, 0.12, -rd.y));
+    col = mix(land, col, smoothstep(-px, px, e));
   }
 
   // rain veil
@@ -267,8 +270,11 @@ export class GLSky {
     const portrait = h > w;
     gl.uniform2f(u.uRes, w, h);
     gl.uniform1f(u.uSunElev, (e * Math.PI) / 180);
-    gl.uniform1f(u.uFov, ((portrait ? 60 : 72) * Math.PI) / 180);
-    gl.uniform1f(u.uPitch, ((portrait ? 30 : 15) * Math.PI) / 180);
+    const fov = ((portrait ? 60 : 72) * Math.PI) / 180;
+    // Tilt the view so the horizon sits near the bottom: a thin strip of land, mostly sky.
+    const pitch = Math.atan(0.86 * Math.tan(fov / 2) / (w / h));
+    gl.uniform1f(u.uFov, fov);
+    gl.uniform1f(u.uPitch, pitch);
     gl.uniform3f(u.uCover, clamp(cond.low), clamp(cond.mid), clamp(cond.high));
     gl.uniform1f(u.uAod, cond.aod ?? 0.1);
     gl.uniform1f(u.uPathT, parts.transmit);
