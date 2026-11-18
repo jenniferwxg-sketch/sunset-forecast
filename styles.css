@@ -74,7 +74,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* Sky */
 .hero { display: flex; flex-direction: column; gap: 14px; }
-.stage { position: relative; height: clamp(300px, 56vh, 600px); background: #2a2230; }
+.stage { position: relative; height: clamp(360px, 70vh, 780px); background: #2a2230; }
 #sky { display: block; width: 100%; height: 100%; object-fit: cover; }
 .scrub { gap: 0; padding-top: 6px; }
 .scrub input { width: 100%; -webkit-appearance: none; appearance: none; height: 22px; background: transparent; }
@@ -167,7 +167,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (max-width: 600px) {
   .wrap { gap: 48px; }
   .search { max-width: 100%; }
-  .stage { height: min(66vh, 520px); }
+  .stage { height: min(74vh, 620px); }
   .cond { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
