@@ -1,15 +1,16 @@
-import { fetchForecast, searchPlaces } from './api.js?v=4';
-import { buildDays, labelFor } from './score.js?v=4';
-import { sunPosition, compass } from './sun.js?v=4';
-import { SkyRenderer } from './sky.js?v=4';
+import { fetchForecast, searchPlaces } from './api.js?v=5';
+import { buildDays, labelFor } from './score.js?v=5';
+import { sunPosition, compass } from './sun.js?v=5';
+import { SkyRenderer } from './sky.js?v=5';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
 const sky = new SkyRenderer($('#sky'));
 
-const DEFAULT_PLACE = { name: 'San Francisco', region: 'California, United States', lat: 37.7749, lon: -122.4194 };
+const DEFAULT_PLACE = { name: 'Montreal', region: 'Quebec, Canada', lat: 45.5019, lon: -73.5674 };
 const PRESETS = [
   DEFAULT_PLACE,
+  { name: 'San Francisco', region: 'California, United States', lat: 37.7749, lon: -122.4194 },
   { name: 'New York', region: 'New York, United States', lat: 40.7128, lon: -74.006 },
   { name: 'London', region: 'England, United Kingdom', lat: 51.5072, lon: -0.1276 },
   { name: 'Santorini', region: 'South Aegean, Greece', lat: 36.4618, lon: 25.3753 },
@@ -36,8 +37,8 @@ function fmtDay(ms, off, i) {
 const pct = (x) => `${Math.round(x * 100)}%`;
 
 // ---------- storage ----------
-function savePlace(p) { try { localStorage.setItem('glowcast.place', JSON.stringify(p)); } catch {} }
-function loadPlace() { try { return JSON.parse(localStorage.getItem('glowcast.place')); } catch { return null; } }
+function savePlace(p) { try { localStorage.setItem('glowcast.place.v2', JSON.stringify(p)); } catch {} }
+function loadPlace() { try { return JSON.parse(localStorage.getItem('glowcast.place.v2')); } catch { return null; } }
 
 // ---------- data ----------
 async function load(place) {
