@@ -126,11 +126,15 @@ vec4 cloudLayer(vec3 ro, vec3 rd, vec3 s, float hKm, float cover, vec2 scale, fl
   float t = tt.y;
   if (t <= 0.0 || t > 900.0) return vec4(0.0);
   vec3 p = ro + rd * t;
-  float fp = t * pixAng / max(abs(rd.y) + 0.03, 0.03) * max(scale.x, scale.y);
+  // Pixel footprint on the layer. A softened grazing stretch keeps detail near the horizon
+  // instead of smearing it into streaks.
+  float fp = t * pixAng / pow(max(abs(rd.y) + 0.03, 0.03), 0.8) * max(scale.x, scale.y);
   vec2 uv = p.xz * scale + vec2(uSeed * 17.0 + k * 31.0, uSeed * 7.0) + vec2(uTime * 0.002 * (1.0 + k), 0.0);
-  float n = fbm(uv, fp);
+  // Domain warp: bends the noise so shapes look like billowing clouds, not smudged stripes.
+  vec2 wq = vec2(fbm(uv * 0.6 + vec2(3.1, 1.7), fp * 0.6), fbm(uv * 0.6 + vec2(8.3, 2.8), fp * 0.6));
+  float n = fbm(uv + (wq - 0.5) * 1.6, fp);
   float th = mix(0.74, 0.26, cover);
-  float soft = 0.045 + 0.03 * k;
+  float soft = 0.035 + 0.025 * k;
   float dens = smoothstep(th - soft, th + soft, n);
   // detail inside the cloud, for thicker centers
   float core = smoothstep(th, th + 0.25, n);
@@ -172,11 +176,11 @@ void main() {
   if (rd.y > horizonY) {
     // cloud layers, far (high) to near (low)
     vec4 c;
-    c = cloudLayer(ro, rd, s, 8.0, uCover.z, vec2(0.1, 0.24), 0.95, uPathT, col, pixAng, 2.0);
+    c = cloudLayer(ro, rd, s, 8.0, uCover.z, vec2(0.15, 0.21), 0.95, uPathT, col, pixAng, 2.0);
     col = mix(col, c.rgb, c.a);
-    c = cloudLayer(ro, rd, s, 4.0, uCover.y, vec2(0.22, 0.3), 0.85, uPathT, col, pixAng, 1.0);
+    c = cloudLayer(ro, rd, s, 4.0, uCover.y, vec2(0.25, 0.29), 0.85, uPathT, col, pixAng, 1.0);
     col = mix(col, c.rgb, c.a * (1.0 - 0.85 * smoothstep(0.6, 0.95, uCover.x)));
-    c = cloudLayer(ro, rd, s, 1.5, uCover.x, vec2(0.45, 0.55), 0.7, 1.0 - 0.5 * uPathLow, col, pixAng, 0.0);
+    c = cloudLayer(ro, rd, s, 1.5, uCover.x, vec2(0.5, 0.55), 0.7, 1.0 - 0.5 * uPathLow, col, pixAng, 0.0);
     col = mix(col, c.rgb, c.a);
     // sun disc
     float mu = dot(rd, s);
