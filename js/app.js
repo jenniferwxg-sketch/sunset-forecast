@@ -1,11 +1,16 @@
-import { fetchForecast, searchPlaces } from './api.js?v=11';
-import { buildDays, labelFor } from './score.js?v=11';
-import { sunPosition, compass } from './sun.js?v=11';
-import { SkyRenderer } from './sky.js?v=11';
+import { fetchForecast, searchPlaces } from './api.js?v=13';
+import { buildDays, labelFor } from './score.js?v=13';
+import { sunPosition, compass } from './sun.js?v=13';
+import { SkyRenderer } from './sky.js?v=13';
+import { GLSky } from './sky-gl.js?v=13';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
-const sky = new SkyRenderer($('#sky'));
+function makeSky(cv) {
+  try { if (GLSky.supported(cv)) return new GLSky(cv); } catch (e) { console.warn('WebGL sky unavailable, using the simple sky.', e); }
+  return new SkyRenderer(cv);
+}
+const sky = makeSky($('#sky'));
 
 const DEFAULT_PLACE = { name: 'Montreal', region: 'Quebec, Canada', lat: 45.5019, lon: -73.5674 };
 const PRESETS = [
@@ -79,7 +84,7 @@ function pickDefault() {
 function select(i, kind, draw = true) {
   state.sel = { i, kind };
   const ev = state.days[i]?.[kind];
-  state.offset = kind === 'sunset' ? 8 : -8;
+  state.offset = kind === 'sunset' ? 4 : -4;
   $('#scrub').value = state.offset;
   if (ev) sky.prepare(ev.cond, Math.floor(ev.t / 3600000) + (kind === 'sunset' ? 7 : 3));
   if (draw) renderAll();
