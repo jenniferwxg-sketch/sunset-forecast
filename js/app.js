@@ -1,8 +1,8 @@
-import { fetchForecast, searchPlaces } from './api.js?v=17';
-import { buildDays, labelFor } from './score.js?v=17';
-import { sunPosition, compass } from './sun.js?v=17';
-import { SkyRenderer } from './sky.js?v=17';
-import { GLSky } from './sky-gl.js?v=17';
+import { fetchForecast, searchPlaces } from './api.js?v=18';
+import { buildDays, labelFor } from './score.js?v=18';
+import { sunPosition, compass } from './sun.js?v=18';
+import { SkyRenderer } from './sky.js?v=18';
+import { GLSky } from './sky-gl.js?v=18';
 
 const $ = (s) => document.querySelector(s);
 const state = { place: null, days: [], sel: null, offset: 0, data: null };
@@ -282,6 +282,12 @@ $('#week').addEventListener('click', (e) => {
 
 $('#scrub').addEventListener('input', (e) => { state.offset = +e.target.value; drawSky(); });
 
+// Redraw the sky once per frame while the window is resized, so it never shows a stretched frame.
+let resizeFrame = 0;
+new ResizeObserver(() => {
+  if (resizeFrame) return;
+  resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; if (state.sel) drawSky(); });
+}).observe($('.stage'));
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);

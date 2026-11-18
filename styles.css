@@ -74,7 +74,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* Sky */
 .hero { display: flex; flex-direction: column; gap: 14px; }
 .stage { position: relative; height: clamp(300px, 56vh, 600px); background: #2a2230; }
-#sky { display: block; width: 100%; height: 100%; }
+#sky { display: block; width: 100%; height: 100%; object-fit: cover; }
 .scrub { gap: 0; padding-top: 6px; }
 .scrub input { width: 100%; -webkit-appearance: none; appearance: none; height: 22px; background: transparent; }
 .scrub input::-webkit-slider-runnable-track { height: 2px; border-radius: 999px; background: linear-gradient(90deg, var(--gold-soft), var(--gold), var(--sand)); }

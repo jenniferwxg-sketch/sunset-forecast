@@ -267,10 +267,12 @@ export class GLSky {
     const h = Math.max(1, Math.round(w * (rect.height / Math.max(1, rect.width))));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
     gl.viewport(0, 0, w, h);
-    const portrait = h > w;
     gl.uniform2f(u.uRes, w, h);
     gl.uniform1f(u.uSunElev, (e * Math.PI) / 180);
-    const fov = ((portrait ? 60 : 72) * Math.PI) / 180;
+    // Keep the vertical view fixed (about 30 degrees) so resizing the window shows more or less
+    // sky at the sides instead of zooming or squashing the clouds. Limits for very narrow/wide screens.
+    const tx = Math.min(Math.tan((55 * Math.PI) / 180), Math.max(Math.tan(Math.PI / 6), Math.tan((15 * Math.PI) / 180) * (w / h)));
+    const fov = 2 * Math.atan(tx);
     // Tilt the view so the horizon sits near the bottom: a thin strip of land, mostly sky.
     const pitch = Math.atan(0.86 * Math.tan(fov / 2) / (w / h));
     gl.uniform1f(u.uFov, fov);
